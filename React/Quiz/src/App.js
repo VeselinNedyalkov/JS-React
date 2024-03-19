@@ -1,4 +1,5 @@
 import { useEffect, useReducer } from "react";
+
 import Header from "./components/Header";
 import { Main } from "./components/Main";
 import { Loader } from "./components/Loader";
@@ -8,6 +9,10 @@ import { Question } from "./components/Question";
 import { NextButton } from "./components/NextButton";
 import { Progress } from "./components/Progress";
 import { FinishScreen } from "./components/FinishScreen";
+import { Timer } from "./components/Timer";
+import { Footer } from "./components/Footer";
+
+const SECS_PER_QUESTION = 30;
 
 const initialState = {
   questions: [],
@@ -16,6 +21,7 @@ const initialState = {
   answer: null,
   points: 0,
   highScore: 0,
+  secondsRemaining: 300,
 };
 
 function reducer(state, action) {
@@ -25,7 +31,7 @@ function reducer(state, action) {
     case 'dataFailed':
       return { ...state, status: "error" };
     case `start`:
-      return { ...state, status: "active" };
+      return { ...state, status: "active", secondsRemaining: state.question.lenght * SECS_PER_QUESTION };
     case `newAnswer`:
       const question = state.questions.at(state.index);
       return {
@@ -41,7 +47,16 @@ function reducer(state, action) {
     case `finish`:
       return { ...state, status: `finished`, highScore: state.points > state.highScore ? state.points : state.highScore };
     case `reset`:
-      return { ...state, status: `active`, index: 0, answer: null, points: 0, highScore: 0 };
+      return {
+        ...state, status: `ready`, index: 0, answer: null,
+        points: 0, highScore: 0, secondsRemaining: 300
+      };
+    case `tick`:
+
+      return {
+        ...state, secondsRemaining: state.secondsRemaining - 1,
+        status: state.secondsRemaining === 0 ? `finish` : state.status
+      }
     default:
 
       throw new Error("Action unknown");
@@ -50,7 +65,7 @@ function reducer(state, action) {
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { questions, status, index, answer, points, highScore } = state;
+  const { questions, status, index, answer, points, highScore, secondsRemaining } = state;
   const numQuestions = questions.length;
   const maxPossiblePoints = questions.reduce((prev, cur) => prev + cur.points, 0);
   console.log(numQuestions);
@@ -85,12 +100,15 @@ export default function App() {
             dispatch={dispatch}
             answer={answer}
           />
-          <NextButton
-            dispatch={dispatch}
-            answer={answer}
-            index={index}
-            numQuestions={numQuestions}
-          />
+          <Footer>
+            <Timer dispatch={dispatch} secondsRemaining={secondsRemaining} />
+            <NextButton
+              dispatch={dispatch}
+              answer={answer}
+              index={index}
+              numQuestions={numQuestions}
+            />
+          </Footer>
         </>
       }
       {status === `finished` &&
