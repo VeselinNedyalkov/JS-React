@@ -27,7 +27,7 @@ const initialState = {
 
 function reducer(state, action) {
 function reducer(state, action) {
-  if (!state.isActive) {
+  if (!state.isActive && action.type !== "openAccount") {
     return state;
   }
   
